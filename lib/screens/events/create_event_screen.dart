@@ -330,7 +330,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _createEvent() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return Future.value();
 
     if (_startDate == null || _startTime == null || _endDate == null || _endTime == null) {
       if (mounted) {
@@ -338,7 +338,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           const SnackBar(content: Text('Please select date and time')),
         );
       }
-      return;
+      return Future.value();
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -352,7 +352,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           const SnackBar(content: Text('Please sign in to create events')),
         );
       }
-      return;
+      return Future.value();
     }
 
     final startDateTime = DateTime(

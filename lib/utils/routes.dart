@@ -7,7 +7,7 @@ import '../screens/auth/signup_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/events/events_screen.dart';
 import '../screens/events/create_event_screen.dart';
-import '../screens/events/events_detail_screen.dart';
+import '../screens/events/events_details_screen.dart';
 import '../screens/events/join_event_screen.dart';
 import '../screens/events/confirmation_screen.dart';
 import '../screens/settings/settings_screen.dart';

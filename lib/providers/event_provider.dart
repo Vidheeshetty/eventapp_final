@@ -110,6 +110,25 @@ class EventProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> fetchEvents() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Simulate API call delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Events are already initialized in constructor
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Failed to load events: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> createEvent({
     required String title,
     required String description,
@@ -335,23 +354,4 @@ class EventProvider extends ChangeNotifier {
   int getTotalEventsCount() => _events.length;
 
   int getTotalAttendeesCount() => _events.fold(0, (sum, event) => sum + event.currentAttendees);
-}<void> fetchEvents() async {
-  _isLoading = true;
-  _errorMessage = null;
-  notifyListeners();
-
-  try {
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Events are already initialized in constructor
-    _isLoading = false;
-    notifyListeners();
-  } catch (e) {
-    _errorMessage = 'Failed to load events: ${e.toString()}';
-    _isLoading = false;
-    notifyListeners();
-  }
 }
-
-Future

@@ -95,7 +95,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 child: IconButton(
                   icon: const Icon(Icons.share, color: Colors.white),
                   onPressed: () {
-                    // Implement share functionality
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Share functionality would be implemented here')),
                     );
@@ -174,7 +173,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Open maps
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Map functionality would be implemented here')),
                           );
@@ -237,7 +235,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ),
                         IconButton(
                           onPressed: () {
-                            // Contact organizer
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Contact organizer functionality would be implemented here')),
                             );
@@ -363,7 +360,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         _buildDetailRow('Duration', '${_calculateDuration()} hours'),
                         if (!event!.isFree) ...[
                           const Divider(),
-                          _buildDetailRow('Price', '\${event!.price?.toStringAsFixed(0) ?? '0'}'),
+                          _buildDetailRow('Price', '\$${event!.price?.toStringAsFixed(0) ?? '0'}'),
                         ],
                         const Divider(),
                         _buildDetailRow('Max Attendees', '${event!.maxAttendees}'),
