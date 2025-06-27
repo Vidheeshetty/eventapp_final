@@ -28,13 +28,13 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
-            // Remove resource shrinking for debug builds
+            // Disable resource shrinking for debug builds to avoid the error
             isShrinkResources = false
             isMinifyEnabled = false
         }
         release {
             isDebuggable = false
-            // Enable both minification and resource shrinking together
+            // Enable both minification and resource shrinking together for release
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

@@ -262,7 +262,7 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          event!.isFree ? 'FREE' : '\$${event!.price?.toStringAsFixed(0) ?? '0'}',
+                          event!.isFree ? 'FREE' : '\${event!.price?.toStringAsFixed(0) ?? '0'}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,

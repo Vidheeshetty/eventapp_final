@@ -23,3 +23,6 @@ plugins {
 }
 
 include(":app")
+
+// Set the project directory for the app module
+project(":app").projectDir = file("android/app")
