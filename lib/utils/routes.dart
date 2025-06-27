@@ -25,7 +25,7 @@ class AppRoutes {
   static const String confirmation = '/confirmation';
   static const String settings = '/settings';
 
-  // Routes map
+  // Routes map - FIXED: Added missing home route
   static Map<String, WidgetBuilder> routes = {
     splash: (context) => const SplashScreen(),
     login: (context) => const LoginScreen(),

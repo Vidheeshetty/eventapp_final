@@ -6,21 +6,21 @@ plugins {
 
 android {
     namespace = "com.example.eventapp_final"
-    compileSdk = 34
+    compileSdk = 35
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     defaultConfig {
         applicationId = "com.example.eventapp_final"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -39,13 +39,9 @@ android {
         }
         release {
             isDebuggable = false
-            // Enable both minification and resource shrinking together for release
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            // DISABLE minification to avoid R8 errors for now
+            isMinifyEnabled = false
+            isShrinkResources = false
 
             // Use debug signing config for release builds (for testing)
             signingConfig = signingConfigs.getByName("debug")

@@ -70,86 +70,10 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
-        home: const SplashScreen(),
+        initialRoute: AppRoutes.splash,
         routes: AppRoutes.routes,
         onGenerateRoute: AppRoutes.generateRoute,
         debugShowCheckedModeBanner: false,
-
-        // Global error handling
-        builder: (context, widget) {
-          // Handle errors gracefully
-          ErrorWidget.builder = (FlutterErrorDetails errorDetails) {
-            return Scaffold(
-              backgroundColor: Colors.white,
-              body: SafeArea(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: Colors.red,
-                          size: 60,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Something went wrong!',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'This is a demo app with dummy data',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Please restart the app',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: () {
-                            // Try to navigate to splash screen
-                            try {
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                AppRoutes.splash,
-                                    (route) => false,
-                              );
-                            } catch (e) {
-                              // If navigation fails, just print error
-                              debugPrint('Navigation error: $e');
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Restart App'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          };
-
-          // Return the main widget
-          return widget ?? const SizedBox.shrink();
-        },
       ),
     );
   }
