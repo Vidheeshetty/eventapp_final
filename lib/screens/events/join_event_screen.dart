@@ -18,26 +18,37 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
   EventModel? event;
   bool isLoading = true;
   int selectedAttendees = 1;
+  String? eventId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args != null) {
-      final eventId = args['eventId'] as String;
-      _loadEvent(eventId);
+    if (args != null && eventId == null) {
+      eventId = args['eventId'] as String;
+      _loadEvent(eventId!);
     }
   }
 
   Future<void> _loadEvent(String eventId) async {
-    final eventProvider = Provider.of<EventProvider>(context, listen: false);
-    final loadedEvent = await eventProvider.getEventById(eventId);
+    try {
+      final eventProvider = context.read<EventProvider>();
+      final loadedEvent = await eventProvider.getEventById(eventId);
 
-    if (mounted) {
-      setState(() {
-        event = loadedEvent;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          event = loadedEvent;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading event: $e');
+      if (mounted) {
+        setState(() {
+          event = null;
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -262,7 +273,7 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          event!.isFree ? 'FREE' : '\${event!.price?.toStringAsFixed(0) ?? '0'}',
+                          event!.isFree ? 'FREE' : '\$${event!.price?.toStringAsFixed(0) ?? '0'}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -275,7 +286,7 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
                       Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
                       const SizedBox(width: 4),
                       Text(
-                        '2 hours',
+                        _calculateDuration(),
                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     ],
@@ -303,7 +314,7 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Important Note
+            // Availability Info
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -313,7 +324,30 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue[700]),
+                  Icon(Icons.people, color: Colors.blue[700]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '${event!.maxAttendees - event!.currentAttendees} spots remaining out of ${event!.maxAttendees} total',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Important Note
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange[700]),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
@@ -336,7 +370,7 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -349,6 +383,7 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
                 onPressed: eventProvider.isLoading ? null : _handleJoinEvent,
                 text: 'Proceed',
                 isLoading: eventProvider.isLoading,
+                width: double.infinity,
               );
             },
           ),
@@ -363,35 +398,75 @@ class _JoinEventScreenState extends State<JoinEventScreen> {
     return availableSpots > maxGuestsAllowed ? maxGuestsAllowed : availableSpots;
   }
 
-  Future<void> _handleJoinEvent() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final eventProvider = Provider.of<EventProvider>(context, listen: false);
+  String _calculateDuration() {
+    final duration = event!.endDate.difference(event!.startDate);
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
 
-    if (authProvider.currentUser == null) {
+    if (hours > 0 && minutes > 0) {
+      return '${hours}h ${minutes}m';
+    } else if (hours > 0) {
+      return '${hours}h';
+    } else {
+      return '${minutes}m';
+    }
+  }
+
+  Future<void> _handleJoinEvent() async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final eventProvider = context.read<EventProvider>();
+
+      if (authProvider.currentUser == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please sign in to join events')),
+          );
+        }
+        return;
+      }
+
+      // Check if there are enough spots available
+      final availableSpots = event!.maxAttendees - event!.currentAttendees;
+      if (selectedAttendees > availableSpots) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Only $availableSpots spots remaining'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Join the event using the user ID
+      final userId = authProvider.currentUser!.id;
+      final success = await eventProvider.joinEvent(event!.id, userId);
+
+      if (mounted) {
+        if (success) {
+          // Navigate to confirmation screen
+          AppRoutes.navigateToConfirmation(context, {
+            'event': event!,
+            'attendeeCount': selectedAttendees,
+          });
+        } else {
+          // Show error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(eventProvider.errorMessage ?? 'Failed to join event'),
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error joining event: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please sign in to join events')),
-        );
-      }
-      return;
-    }
-
-    // Join the event using the user ID
-    final userId = authProvider.currentUser!.id;
-    final success = await eventProvider.joinEvent(event!.id, userId);
-
-    if (mounted) {
-      if (success) {
-        // Navigate to confirmation screen
-        AppRoutes.navigateToConfirmation(context, {
-          'event': event!,
-          'attendeeCount': selectedAttendees,
-        });
-      } else {
-        // Show error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(eventProvider.errorMessage ?? 'Failed to join event'),
+          const SnackBar(
+            content: Text('An error occurred while joining the event'),
             backgroundColor: AppTheme.errorColor,
           ),
         );

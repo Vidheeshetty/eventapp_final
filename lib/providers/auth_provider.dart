@@ -37,8 +37,7 @@ class AuthProvider extends ChangeNotifier {
 
   // Check if user is admin
   bool get isAdmin {
-    if (_currentUser == null) return false;
-    return _currentUser!.isAdmin;
+    return _currentUser?.isAdmin ?? false;
   }
 
   AuthProvider() {
@@ -46,13 +45,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _checkAuthStatus() async {
-    // Simulate checking stored auth status
-    await Future.delayed(const Duration(milliseconds: 500));
+    try {
+      // Simulate checking stored auth status
+      await Future.delayed(const Duration(milliseconds: 500));
 
-    // For demo purposes, user stays logged out initially
-    _isSignedIn = false;
-    _currentUser = null;
-    notifyListeners();
+      // For demo purposes, user stays logged out initially
+      _isSignedIn = false;
+      _currentUser = null;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error checking auth status: $e');
+      _isSignedIn = false;
+      _currentUser = null;
+      notifyListeners();
+    }
   }
 
   Future<bool> signUp(String email, String password, String name) async {
@@ -91,6 +97,7 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = 'Sign up failed. Please try again.';
       notifyListeners();
+      debugPrint('Sign up error: $e');
       return false;
     }
   }
@@ -119,6 +126,7 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = 'Verification failed. Please try again.';
       notifyListeners();
+      debugPrint('Confirmation error: $e');
       return false;
     }
   }
@@ -133,10 +141,15 @@ class AuthProvider extends ChangeNotifier {
       await Future.delayed(const Duration(seconds: 2));
 
       // Find user in dummy data
-      final user = _dummyUsers.firstWhere(
-            (user) => user.email == email,
-        orElse: () => throw Exception('User not found'),
-      );
+      UserModel? user;
+      try {
+        user = _dummyUsers.firstWhere((user) => user.email == email);
+      } catch (e) {
+        _errorMessage = 'Invalid email or password.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
 
       // For demo purposes, any password works for existing users
       _isSignedIn = true;
@@ -149,6 +162,7 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = 'Invalid email or password.';
       notifyListeners();
+      debugPrint('Sign in error: $e');
       return false;
     }
   }
@@ -167,6 +181,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Sign out failed. Please try again.';
       notifyListeners();
+      debugPrint('Sign out error: $e');
     }
   }
 
@@ -196,6 +211,7 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = 'Password reset failed. Please try again.';
       notifyListeners();
+      debugPrint('Reset password error: $e');
       return false;
     }
   }
@@ -228,6 +244,7 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = 'Password reset confirmation failed. Please try again.';
       notifyListeners();
+      debugPrint('Reset password confirmation error: $e');
       return false;
     }
   }
@@ -253,7 +270,7 @@ class AuthProvider extends ChangeNotifier {
         'sub': _currentUser!.id,
       };
     } catch (e) {
-      print('Error fetching user attributes: $e');
+      debugPrint('Error fetching user attributes: $e');
       return null;
     }
   }
@@ -273,7 +290,7 @@ class AuthProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      print('Error updating user attribute: $e');
+      debugPrint('Error updating user attribute: $e');
       return false;
     }
   }

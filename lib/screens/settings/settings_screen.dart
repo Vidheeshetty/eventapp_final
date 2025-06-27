@@ -39,7 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -56,7 +56,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         child: Center(
                           child: Text(
-                            auth.currentUser?.name[0].toUpperCase() ?? 'U',
+                            auth.currentUser?.name.isNotEmpty == true
+                                ? auth.currentUser!.name[0].toUpperCase()
+                                : 'U',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 24,
@@ -91,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withOpacity(0.1),
+                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Text(
@@ -110,7 +112,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       IconButton(
                         onPressed: () {
-                          // Edit profile placeholder
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Edit profile feature coming soon!')),
                           );
@@ -288,7 +289,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -322,19 +323,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showSignOutDialog(AuthProvider authProvider) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sign Out'),
         content: const Text('Are you sure you want to sign out?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              // Close dialog first
+              Navigator.pop(dialogContext);
+
+              // Store navigator reference before async operation
+              final navigator = Navigator.of(context);
+
+              // Perform async operation
               await authProvider.signOut();
-              AppRoutes.navigateToLogin(context);
+
+              // Navigate after async operation with mounted check
+              if (mounted) {
+                navigator.pushNamedAndRemoveUntil(
+                  AppRoutes.login,
+                      (route) => false,
+                );
+              }
             },
             child: const Text(
               'Sign Out',

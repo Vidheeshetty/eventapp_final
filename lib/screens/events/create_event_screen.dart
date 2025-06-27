@@ -77,14 +77,33 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     child: Image.network(
                       _selectedImage!,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.error, color: Colors.red),
+                              Text('Failed to load image'),
+                            ],
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      },
                     ),
                   )
                       : const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_photo_alternate_outlined, size: 40, color: Colors.grey),
+                      Icon(Icons.add_photo_alternate_outlined,
+                          size: 40, color: Colors.grey),
                       SizedBox(height: 8),
-                      Text('Add Cover Image', style: TextStyle(color: Colors.grey)),
+                      Text('Add Cover Image',
+                          style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 ),
@@ -96,7 +115,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 controller: _titleController,
                 label: 'Event Title',
                 hint: 'Enter event title',
-                validator: (value) => value?.isEmpty ?? true ? 'Title is required' : null,
+                validator: (value) =>
+                value?.isEmpty ?? true ? 'Title is required' : null,
               ),
               const SizedBox(height: 20),
 
@@ -106,7 +126,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 label: 'Description',
                 hint: 'Describe your event',
                 maxLines: 4,
-                validator: (value) => value?.isEmpty ?? true ? 'Description is required' : null,
+                validator: (value) =>
+                value?.isEmpty ?? true ? 'Description is required' : null,
               ),
               const SizedBox(height: 20),
 
@@ -116,7 +137,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 label: 'Location',
                 hint: 'Event location',
                 prefixIcon: Icons.location_on_outlined,
-                validator: (value) => value?.isEmpty ?? true ? 'Location is required' : null,
+                validator: (value) =>
+                value?.isEmpty ?? true ? 'Location is required' : null,
               ),
               const SizedBox(height: 24),
 
@@ -132,7 +154,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   Expanded(
                     child: _buildDateTimeField(
                       'Start Date',
-                      _startDate != null ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}' : null,
+                      _startDate != null
+                          ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                          : null,
                           () => _selectDate(true),
                     ),
                   ),
@@ -153,7 +177,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   Expanded(
                     child: _buildDateTimeField(
                       'End Date',
-                      _endDate != null ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}' : null,
+                      _endDate != null
+                          ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
+                          : null,
                           () => _selectDate(false),
                     ),
                   ),
@@ -177,8 +203,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 keyboardType: TextInputType.number,
                 prefixIcon: Icons.people_outline,
                 validator: (value) {
-                  if (value?.isEmpty ?? true) return 'Max attendees is required';
-                  if (int.tryParse(value!) == null) return 'Enter valid number';
+                  if (value?.isEmpty ?? true) {
+                    return 'Max attendees is required';
+                  }
+                  if (int.tryParse(value!) == null) {
+                    return 'Enter valid number';
+                  }
                   return null;
                 },
               ),
@@ -223,8 +253,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   keyboardType: TextInputType.number,
                   prefixIcon: Icons.attach_money,
                   validator: (value) {
-                    if (!_isFree && (value?.isEmpty ?? true)) return 'Price is required';
-                    if (!_isFree && double.tryParse(value!) == null) return 'Enter valid price';
+                    if (!_isFree && (value?.isEmpty ?? true)) {
+                      return 'Price is required';
+                    }
+                    if (!_isFree && double.tryParse(value!) == null) {
+                      return 'Enter valid price';
+                    }
                     return null;
                   },
                 ),
@@ -317,22 +351,52 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1800,
+        maxHeight: 1800,
+        imageQuality: 85,
+      );
 
-    if (image != null) {
-      // In a real app, upload to storage and get URL
-      // For demo, use a placeholder image
-      setState(() {
-        _selectedImage = 'https://picsum.photos/300/180?random=${DateTime.now().millisecondsSinceEpoch}';
-      });
+      if (image != null) {
+        // In a real app, upload to storage and get URL
+        // For demo, use a placeholder image with timestamp
+        setState(() {
+          _selectedImage =
+          'https://picsum.photos/300/180?random=${DateTime.now().millisecondsSinceEpoch}';
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Image selected successfully!'),
+              backgroundColor: AppTheme.successColor,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+      debugPrint('Image picker error: $e');
     }
   }
 
   Future<void> _createEvent() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_startDate == null || _startTime == null || _endDate == null || _endTime == null) {
+    if (_startDate == null ||
+        _startTime == null ||
+        _endDate == null ||
+        _endTime == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select date and time')),
@@ -371,6 +435,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       _endTime!.minute,
     );
 
+    // Validate dates
+    if (endDateTime.isBefore(startDateTime)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('End date cannot be before start date')),
+        );
+      }
+      return;
+    }
+
     // Create the event using EventProvider
     final success = await eventProvider.createEvent(
       title: _titleController.text.trim(),
@@ -396,7 +470,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(eventProvider.errorMessage ?? 'Failed to create event'),
+            content:
+            Text(eventProvider.errorMessage ?? 'Failed to create event'),
             backgroundColor: AppTheme.errorColor,
           ),
         );

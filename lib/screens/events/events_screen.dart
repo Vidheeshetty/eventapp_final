@@ -90,8 +90,14 @@ class _EventsScreenState extends State<EventsScreen> {
             onSelected: (value) async {
               if (value == 'logout') {
                 final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final navigator = Navigator.of(context);
                 await authProvider.signOut();
-                AppRoutes.navigateToLogin(context);
+                if (mounted) {
+                  navigator.pushNamedAndRemoveUntil(
+                    AppRoutes.login,
+                        (route) => false,
+                  );
+                }
               }
             },
           ),
@@ -106,7 +112,7 @@ class _EventsScreenState extends State<EventsScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -159,7 +165,7 @@ class _EventsScreenState extends State<EventsScreen> {
                                 .filterEvents(filter);
                           },
                           backgroundColor: Colors.grey[100],
-                          selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+                          selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                           labelStyle: TextStyle(
                             color: isSelected ? AppTheme.primaryColor : Colors.grey[700],
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,

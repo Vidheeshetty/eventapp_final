@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter/foundation.dart';
 import '../utils/constants.dart';
 
 class LocationService {
@@ -6,56 +8,124 @@ class LocationService {
   factory LocationService() => _instance;
   LocationService._internal();
 
-  // Dummy position data
+  // Current position data
   Map<String, double>? _currentPosition;
-  bool _isLocationServiceEnabled = true; // For demo purposes
+  bool _isLocationServiceEnabled = false;
+  bool _isInitialized = false;
 
   Map<String, double>? get currentPosition => _currentPosition;
   bool get isLocationServiceEnabled => _isLocationServiceEnabled;
+  bool get isInitialized => _isInitialized;
 
   Future<bool> initialize() async {
     try {
-      // Simulate location service initialization
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Check if location services are enabled
+      _isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
 
-      // Set default location to Thane, Maharashtra
+      if (!_isLocationServiceEnabled) {
+        // Use default location for demo
+        _currentPosition = {
+          'latitude': AppConstants.defaultLatitude,
+          'longitude': AppConstants.defaultLongitude,
+        };
+        _isInitialized = true;
+        debugPrint('Location services disabled, using default location');
+        return true;
+      }
+
+      // Check permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // Use default location
+          _currentPosition = {
+            'latitude': AppConstants.defaultLatitude,
+            'longitude': AppConstants.defaultLongitude,
+          };
+          _isInitialized = true;
+          debugPrint('Location permission denied, using default location');
+          return true;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // Use default location
+        _currentPosition = {
+          'latitude': AppConstants.defaultLatitude,
+          'longitude': AppConstants.defaultLongitude,
+        };
+        _isInitialized = true;
+        debugPrint('Location permission denied forever, using default location');
+        return true;
+      }
+
+      // Try to get current location
+      try {
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 10),
+        );
+
+        _currentPosition = {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        };
+      } catch (e) {
+        // Fall back to default location
+        _currentPosition = {
+          'latitude': AppConstants.defaultLatitude,
+          'longitude': AppConstants.defaultLongitude,
+        };
+        debugPrint('Failed to get current location, using default: $e');
+      }
+
+      _isInitialized = true;
+      debugPrint('Location service initialized successfully');
+      return true;
+    } catch (e) {
+      debugPrint('Error initializing location service: $e');
+      // Ensure we have a fallback location
       _currentPosition = {
         'latitude': AppConstants.defaultLatitude,
         'longitude': AppConstants.defaultLongitude,
       };
-
-      _isLocationServiceEnabled = true;
-      return true;
-    } catch (e) {
-      print('Error initializing location service: $e');
+      _isInitialized = true;
       return false;
     }
   }
 
   Future<Map<String, double>?> getCurrentLocation() async {
-    try {
-      // Simulate getting current location
-      await Future.delayed(const Duration(seconds: 1));
+    if (!_isInitialized) {
+      await initialize();
+    }
 
-      // Return default location (Thane, Maharashtra) with some random variation
-      final random = Random();
-      final latVariation = (random.nextDouble() - 0.5) * 0.01; // Small variation
-      final lngVariation = (random.nextDouble() - 0.5) * 0.01;
+    try {
+      // Check permissions first
+      if (!await isLocationPermissionGranted()) {
+        return _currentPosition; // Return cached or default position
+      }
+
+      // Try to get fresh location
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
 
       _currentPosition = {
-        'latitude': AppConstants.defaultLatitude + latVariation,
-        'longitude': AppConstants.defaultLongitude + lngVariation,
+        'latitude': position.latitude,
+        'longitude': position.longitude,
       };
 
       return _currentPosition;
     } catch (e) {
-      print('Error getting location: $e');
-      // Return default location if unable to get current location
-      _currentPosition = {
+      debugPrint('Error getting current location: $e');
+      // Return cached position or default
+      return _currentPosition ?? {
         'latitude': AppConstants.defaultLatitude,
         'longitude': AppConstants.defaultLongitude,
       };
-      return _currentPosition;
     }
   }
 
@@ -65,24 +135,17 @@ class LocationService {
     required double endLatitude,
     required double endLongitude,
   }) {
-    // Simple distance calculation using Haversine formula (approximation)
-    const double earthRadius = 6371; // Earth's radius in kilometers
-
-    double dLat = _degreesToRadians(endLatitude - startLatitude);
-    double dLng = _degreesToRadians(endLongitude - startLongitude);
-
-    double a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_degreesToRadians(startLatitude)) *
-            cos(_degreesToRadians(endLatitude)) *
-            sin(dLng / 2) *
-            sin(dLng / 2);
-
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return earthRadius * c;
-  }
-
-  double _degreesToRadians(double degrees) {
-    return degrees * (pi / 180);
+    try {
+      return Geolocator.distanceBetween(
+        startLatitude,
+        startLongitude,
+        endLatitude,
+        endLongitude,
+      ) / 1000; // Convert to kilometers
+    } catch (e) {
+      debugPrint('Error calculating distance: $e');
+      return 0.0;
+    }
   }
 
   double getDistanceFromCurrentLocation({
@@ -133,21 +196,41 @@ class LocationService {
   }
 
   Future<bool> isLocationPermissionGranted() async {
-    // For demo purposes, always return true
-    await Future.delayed(const Duration(milliseconds: 100));
-    return true;
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      return permission == LocationPermission.always ||
+          permission == LocationPermission.whileInUse;
+    } catch (e) {
+      debugPrint('Error checking location permission: $e');
+      return false;
+    }
   }
 
   Future<bool> requestLocationPermission() async {
-    // Simulate permission request
-    await Future.delayed(const Duration(milliseconds: 500));
-    return true;
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
+      return permission == LocationPermission.always ||
+          permission == LocationPermission.whileInUse;
+    } catch (e) {
+      debugPrint('Error requesting location permission: $e');
+      return false;
+    }
   }
 
   Future<void> openLocationSettings() async {
-    // Simulate opening location settings
-    print('Opening location settings...');
-    await Future.delayed(const Duration(milliseconds: 100));
+    try {
+      await Geolocator.openLocationSettings();
+    } catch (e) {
+      debugPrint('Error opening location settings: $e');
+    }
+  }
+
+  Future<void> openAppSettings() async {
+    try {
+      await Geolocator.openAppSettings();
+    } catch (e) {
+      debugPrint('Error opening app settings: $e');
+    }
   }
 
   String getLocationString() {
@@ -188,5 +271,49 @@ class LocationService {
       endLatitude: 19.0760, // Mumbai coordinates
       endLongitude: 72.8777,
     );
+  }
+
+  // Stream for real-time location updates
+  Stream<Position>? _positionStream;
+
+  Stream<Position> getPositionStream() {
+    _positionStream ??= Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10, // Update every 10 meters
+      ),
+    );
+    return _positionStream!;
+  }
+
+  void dispose() {
+    _positionStream = null;
+  }
+
+  // For backwards compatibility - using simple calculation as fallback
+  double _degreesToRadians(double degrees) {
+    return degrees * (pi / 180);
+  }
+
+  // Simple distance calculation using Haversine formula (backup method)
+  double calculateDistanceSimple({
+    required double startLatitude,
+    required double startLongitude,
+    required double endLatitude,
+    required double endLongitude,
+  }) {
+    const double earthRadius = 6371; // Earth's radius in kilometers
+
+    double dLat = _degreesToRadians(endLatitude - startLatitude);
+    double dLng = _degreesToRadians(endLongitude - startLongitude);
+
+    double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degreesToRadians(startLatitude)) *
+            cos(_degreesToRadians(endLatitude)) *
+            sin(dLng / 2) *
+            sin(dLng / 2);
+
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return earthRadius * c;
   }
 }

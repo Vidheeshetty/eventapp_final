@@ -67,10 +67,19 @@ class _HomeScreenState extends State<HomeScreen> {
             onSelected: (value) async {
               if (value == 'logout') {
                 final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                final navigator = Navigator.of(context);
                 await authProvider.signOut();
-                AppRoutes.navigateToLogin(context);
+                if (mounted) {
+                  navigator.pushNamedAndRemoveUntil(
+                    AppRoutes.login,
+                        (route) => false,
+                  );
+                }
               } else if (value == 'settings') {
-                AppRoutes.navigateToSettings(context);
+                final navigator = Navigator.of(context);
+                if (mounted) {
+                  navigator.pushNamed(AppRoutes.settings);
+                }
               }
             },
           ),
@@ -95,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -275,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(

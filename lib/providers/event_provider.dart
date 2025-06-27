@@ -189,7 +189,7 @@ class EventProvider extends ChangeNotifier {
         orElse: () => throw Exception('Event not found'),
       );
     } catch (e) {
-      print('Error fetching event: $e');
+      debugPrint('Error fetching event: $e');
       return null;
     }
   }
@@ -222,7 +222,7 @@ class EventProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       _errorMessage = 'Failed to join event: ${e.toString()}';
-      print('Error joining event: $e');
+      debugPrint('Error joining event: $e');
       return false;
     }
   }
@@ -255,7 +255,7 @@ class EventProvider extends ChangeNotifier {
       return false;
     } catch (e) {
       _errorMessage = 'Failed to leave event: ${e.toString()}';
-      print('Error leaving event: $e');
+      debugPrint('Error leaving event: $e');
       return false;
     }
   }

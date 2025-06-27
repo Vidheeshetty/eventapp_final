@@ -23,12 +23,17 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        // For native dependencies
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        }
     }
 
     buildTypes {
         debug {
             isDebuggable = true
-            // Disable resource shrinking for debug builds to avoid the error
+            // Disable resource shrinking for debug builds
             isShrinkResources = false
             isMinifyEnabled = false
         }
@@ -41,7 +46,23 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+
+            // Use debug signing config for release builds (for testing)
+            signingConfig = signingConfigs.getByName("debug")
         }
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/*.kotlin_module"
+        }
+    }
+
+    lint {
+        disable += "InvalidPackage"
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 

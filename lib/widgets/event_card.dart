@@ -29,7 +29,7 @@ class EventCard extends StatelessWidget {
             // Event Image
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: Container(
+              child: SizedBox(
                 height: 180,
                 width: double.infinity,
                 child: event.coverImage != null
@@ -43,6 +43,8 @@ class EventCard extends StatelessWidget {
                     ),
                   ),
                   errorWidget: (context, url, error) => _buildPlaceholderImage(),
+                  fadeInDuration: const Duration(milliseconds: 300),
+                  fadeOutDuration: const Duration(milliseconds: 300),
                 )
                     : _buildPlaceholderImage(),
               ),
@@ -67,7 +69,7 @@ class EventCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: event.isToday
                               ? AppTheme.primaryColor
-                              : AppTheme.primaryColor.withOpacity(0.1),
+                              : AppTheme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -138,36 +140,42 @@ class EventCard extends StatelessWidget {
                   Row(
                     children: [
                       // Organizer
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.person_outline,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              event.organizerName,
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                                size: 14,
+                                color: Colors.grey[600],
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  event.organizerName,
+                                  style: TextStyle(
+                                    color: Colors.grey[700],
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
 
                       // Attendees
                       _buildAttendeesWidget(),
@@ -199,8 +207,8 @@ class EventCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: event.isFree
-                              ? AppTheme.successColor.withOpacity(0.1)
-                              : AppTheme.warningColor.withOpacity(0.1),
+                              ? AppTheme.successColor.withValues(alpha: 0.1)
+                              : AppTheme.warningColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -215,7 +223,7 @@ class EventCard extends StatelessWidget {
                       const Spacer(),
 
                       // Join Button
-                      Container(
+                      SizedBox(
                         height: 32,
                         child: ElevatedButton(
                           onPressed: event.isFull ? null : onTap,
@@ -230,6 +238,7 @@ class EventCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
+                            elevation: event.isFull ? 0 : 2,
                           ),
                           child: Text(
                             event.isFull ? 'Full' : 'Join Event',
@@ -253,7 +262,7 @@ class EventCard extends StatelessWidget {
 
   Widget _buildPlaceholderImage() {
     return Container(
-      color: AppTheme.primaryColor.withOpacity(0.1),
+      color: AppTheme.primaryColor.withValues(alpha: 0.1),
       child: const Center(
         child: Icon(
           Icons.event,
@@ -268,50 +277,75 @@ class EventCard extends StatelessWidget {
     final now = DateTime.now();
     final eventDate = event.startDate;
 
+    // Today
     if (eventDate.year == now.year &&
         eventDate.month == now.month &&
-        eventDate.day == now.day + 1) {
-      return 'TOM';
-    } else if (eventDate.year == now.year &&
-        eventDate.month == now.month &&
-        eventDate.day >= now.day &&
-        eventDate.day <= now.day + 7) {
-      return 'SAT'; // This would be dynamic based on actual day
-    } else {
-      return '${eventDate.day}/${eventDate.month}';
+        eventDate.day == now.day) {
+      return 'TODAY';
     }
+
+    // Tomorrow
+    final tomorrow = now.add(const Duration(days: 1));
+    if (eventDate.year == tomorrow.year &&
+        eventDate.month == tomorrow.month &&
+        eventDate.day == tomorrow.day) {
+      return 'TOM';
+    }
+
+    // This week
+    final daysDifference = eventDate.difference(now).inDays;
+    if (daysDifference >= 0 && daysDifference <= 7) {
+      const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      return weekdays[eventDate.weekday % 7];
+    }
+
+    // Show date
+    return '${eventDate.day}/${eventDate.month}';
   }
 
   Widget _buildAttendeesWidget() {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Attendee avatars (stack)
-        SizedBox(
-          width: 60,
-          height: 24,
-          child: Stack(
-            children: List.generate(
-              (event.currentAttendees > 3 ? 3 : event.currentAttendees),
-                  (index) => Positioned(
-                left: index * 16.0,
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: _getAvatarColor(index),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+        if (event.currentAttendees > 0) ...[
+          SizedBox(
+            width: event.currentAttendees > 3 ? 60 : (event.currentAttendees * 20.0),
+            height: 24,
+            child: Stack(
+              children: List.generate(
+                (event.currentAttendees > 3 ? 3 : event.currentAttendees),
+                    (index) => Positioned(
+                  left: index * 16.0,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: _getAvatarColor(index),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+          const SizedBox(width: 4),
+        ],
 
         // More indicator and count
         if (event.currentAttendees > 3)
           Text(
-            '+${event.currentAttendees - 3} more',
+            '+${event.currentAttendees - 3}',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          )
+        else if (event.currentAttendees > 0)
+          Text(
+            '${event.currentAttendees}',
             style: TextStyle(
               color: Colors.grey[600],
               fontSize: 12,
@@ -320,11 +354,11 @@ class EventCard extends StatelessWidget {
           )
         else
           Text(
-            '${event.currentAttendees}',
+            'No attendees yet',
             style: TextStyle(
-              color: Colors.grey[600],
+              color: Colors.grey[500],
               fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontStyle: FontStyle.italic,
             ),
           ),
       ],
@@ -336,6 +370,11 @@ class EventCard extends StatelessWidget {
       AppTheme.primaryColor,
       AppTheme.successColor,
       AppTheme.warningColor,
+      AppTheme.secondaryColor,
+      Colors.teal,
+      Colors.indigo,
+      Colors.orange,
+      Colors.pink,
     ];
     return colors[index % colors.length];
   }

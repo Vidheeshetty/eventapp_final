@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -17,9 +19,9 @@ class NotificationService {
       await Future.delayed(const Duration(milliseconds: 300));
 
       _isInitialized = true;
-      print('Notification service initialized successfully');
+      debugPrint('Notification service initialized successfully');
     } catch (e) {
-      print('Error initializing notification service: $e');
+      debugPrint('Error initializing notification service: $e');
     }
   }
 
@@ -30,10 +32,10 @@ class NotificationService {
 
       // For demo purposes, always grant permission
       _notificationsEnabled = true;
-      print('Notification permission granted');
+      debugPrint('Notification permission granted');
       return true;
     } catch (e) {
-      print('Error requesting notification permission: $e');
+      debugPrint('Error requesting notification permission: $e');
       return false;
     }
   }
@@ -46,7 +48,7 @@ class NotificationService {
       // Return a mock device token
       return 'mock_device_token_${DateTime.now().millisecondsSinceEpoch}';
     } catch (e) {
-      print('Error getting device token: $e');
+      debugPrint('Error getting device token: $e');
       return null;
     }
   }
@@ -61,7 +63,7 @@ class NotificationService {
       // Simulate sending event reminder
       await Future.delayed(const Duration(milliseconds: 500));
 
-      print('Event reminder sent for: $eventTitle to user: $userId');
+      debugPrint('Event reminder sent for: $eventTitle to user: $userId');
 
       // In a real app, this would call your backend to send push notifications
       _showLocalNotification(
@@ -70,7 +72,7 @@ class NotificationService {
         data: {'eventId': eventId, 'type': 'reminder'},
       );
     } catch (e) {
-      print('Error sending event reminder: $e');
+      debugPrint('Error sending event reminder: $e');
     }
   }
 
@@ -84,7 +86,7 @@ class NotificationService {
       // Simulate sending event update
       await Future.delayed(const Duration(milliseconds: 500));
 
-      print('Event update sent: $title to ${userIds.length} users');
+      debugPrint('Event update sent: $title to ${userIds.length} users');
 
       _showLocalNotification(
         title: title,
@@ -92,7 +94,7 @@ class NotificationService {
         data: {'eventId': eventId, 'type': 'update'},
       );
     } catch (e) {
-      print('Error sending event update: $e');
+      debugPrint('Error sending event update: $e');
     }
   }
 
@@ -109,13 +111,13 @@ class NotificationService {
         // Simulate scheduling the reminder
         await Future.delayed(const Duration(milliseconds: 300));
 
-        print('Event reminder scheduled for: ${reminderTime.toString()}');
-        print('Reminder will be sent to ${attendeeIds.length} attendees');
+        debugPrint('Event reminder scheduled for: ${reminderTime.toString()}');
+        debugPrint('Reminder will be sent to ${attendeeIds.length} attendees');
       } else {
-        print('Event is too soon to schedule reminder');
+        debugPrint('Event is too soon to schedule reminder');
       }
     } catch (e) {
-      print('Error scheduling event reminder: $e');
+      debugPrint('Error scheduling event reminder: $e');
     }
   }
 
@@ -126,16 +128,16 @@ class NotificationService {
   }) async {
     try {
       // Simulate showing local notification
-      print('📱 Notification: $title - $body');
+      debugPrint('📱 Notification: $title - $body');
 
       if (data != null) {
-        print('📱 Notification data: $data');
+        debugPrint('📱 Notification data: $data');
       }
 
       // In a real implementation, you would use flutter_local_notifications
       // or similar package to show actual notifications
     } catch (e) {
-      print('Error showing local notification: $e');
+      debugPrint('Error showing local notification: $e');
     }
   }
 
@@ -143,9 +145,9 @@ class NotificationService {
     try {
       // Simulate cancelling all notifications
       await Future.delayed(const Duration(milliseconds: 100));
-      print('All notifications cancelled');
+      debugPrint('All notifications cancelled');
     } catch (e) {
-      print('Error cancelling notifications: $e');
+      debugPrint('Error cancelling notifications: $e');
     }
   }
 
@@ -153,16 +155,16 @@ class NotificationService {
     try {
       // Simulate cancelling specific notification
       await Future.delayed(const Duration(milliseconds: 100));
-      print('Notification $notificationId cancelled');
+      debugPrint('Notification $notificationId cancelled');
     } catch (e) {
-      print('Error cancelling notification $notificationId: $e');
+      debugPrint('Error cancelling notification $notificationId: $e');
     }
   }
 
   // Settings management
   Future<void> setNotificationsEnabled(bool enabled) async {
     _notificationsEnabled = enabled;
-    print('Notifications ${enabled ? 'enabled' : 'disabled'}');
+    debugPrint('Notifications ${enabled ? 'enabled' : 'disabled'}');
   }
 
   Future<bool> areNotificationsEnabled() async {

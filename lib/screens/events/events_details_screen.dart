@@ -17,26 +17,37 @@ class EventDetailScreen extends StatefulWidget {
 class _EventDetailScreenState extends State<EventDetailScreen> {
   EventModel? event;
   bool isLoading = true;
+  String? eventId;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (args != null) {
-      final eventId = args['eventId'] as String;
-      _loadEvent(eventId);
+    if (args != null && eventId == null) {
+      eventId = args['eventId'] as String;
+      _loadEvent(eventId!);
     }
   }
 
   Future<void> _loadEvent(String eventId) async {
-    final eventProvider = Provider.of<EventProvider>(context, listen: false);
-    final loadedEvent = await eventProvider.getEventById(eventId);
+    try {
+      final eventProvider = context.read<EventProvider>();
+      final loadedEvent = await eventProvider.getEventById(eventId);
 
-    if (mounted) {
-      setState(() {
-        event = loadedEvent;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          event = loadedEvent;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading event: $e');
+      if (mounted) {
+        setState(() {
+          event = null;
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -89,7 +100,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -201,7 +212,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              event!.organizerName[0].toUpperCase(),
+                              event!.organizerName.isNotEmpty ? event!.organizerName[0].toUpperCase() : 'O',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -260,7 +271,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -384,7 +395,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -397,6 +408,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 : () => AppRoutes.navigateToJoinEvent(context, event!.id),
             text: event!.isFull ? 'Event Full' : 'Join Event',
             backgroundColor: event!.isFull ? Colors.grey : AppTheme.primaryColor,
+            width: double.infinity,
           ),
         ),
       ),
@@ -405,7 +417,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Widget _buildPlaceholderImage() {
     return Container(
-      color: AppTheme.primaryColor.withOpacity(0.2),
+      color: AppTheme.primaryColor.withValues(alpha: 0.2),
       child: const Center(
         child: Icon(
           Icons.event,
