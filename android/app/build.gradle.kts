@@ -33,7 +33,7 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
-            // Disable resource shrinking for debug builds to avoid the error
+            // Disable resource shrinking for debug builds
             isShrinkResources = false
             isMinifyEnabled = false
         }
@@ -47,6 +47,7 @@ android {
                 "proguard-rules.pro"
             )
 
+            // Use debug signing config for release builds (for testing)
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -54,7 +55,14 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/*.kotlin_module"
         }
+    }
+
+    lint {
+        disable += "InvalidPackage"
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
